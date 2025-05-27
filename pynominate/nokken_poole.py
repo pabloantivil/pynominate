@@ -82,7 +82,7 @@ def nokken_poole(payload, cores=int(cpu_count()) - 1, xtol=1e-4, add_meta=['memb
     OPTIONS['xtol'] = xtol
     OPTIONSWB['xtol'] = xtol
 
-    print "(000) Running Nokken-Poole on %i cores..." % cores
+    print("(000) Running Nokken-Poole on %i cores..." % cores)
     firststarttime = time.time()
 
     if cores >= 2:
@@ -100,7 +100,7 @@ def nokken_poole(payload, cores=int(cpu_count()) - 1, xtol=1e-4, add_meta=['memb
     starttime = time.time()
 
     dat = make_member_congress_votes(payload)
-    print "(001) Data marshal took %2.2f seconds (%i members)..." % (time.time() - starttime, len(dat['start']))
+    print("(001) Data marshal took %2.2f seconds (%i members)..." % (time.time() - starttime, len(dat['start'])))
     # Run dwnominate...
     res_idpt = mymap(
         update_idpt_star,
@@ -110,7 +110,7 @@ def nokken_poole(payload, cores=int(cpu_count()) - 1, xtol=1e-4, add_meta=['memb
         )
     )
 
-    print "(002) Total update time elapsed %5.2f minutes." % ((time.time() - firststarttime) / 60)
+    print("(002) Total update time elapsed %5.2f minutes." % ((time.time() - firststarttime) / 60))
     res_idpt = [
         merge_dicts(r, s, {'startx': t})
         for r, s, t in zip(

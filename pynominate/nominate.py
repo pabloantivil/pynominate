@@ -94,10 +94,10 @@ def update_bp(d, w, b, par0=np.array([0, 0, 0, 0])):
         res = ares['x']
         llend = dwnominate_ll_bp(res, d, w, b)
 
-    except Exception, e:
-        print "\t\tError: %s" % e
-        print "\t\tProblem in: %s" % d
-        print "\t\tReturning start values and moving on..."
+    except Exception as e:
+        print("\t\tError: %s" % e)
+        print("\t\tProblem in: %s" % d)
+        print("\t\tReturning start values and moving on...")
         llstart = 0
         llend = 0
         res = par0
@@ -237,19 +237,19 @@ def update_nominate(payload, maxiter=20, cores=int(cpu_count() - 1), update=['bp
     OPTIONSWB['xtol'] = xtol
 
     if 'bp' in update and ('votes' not in payload or not payload['votes']):
-        print "Payload missing 'votes'! Cannot update bill parameters, quitting."
+        print("Payload missing 'votes'! Cannot update bill parameters, quitting.")
         sys.exit(1)
     if 'idpt' in update and ('memberwise' not in payload or not payload['memberwise']):
-        print "Payload missing 'memberwise'! Cannot update ideal points, quitting."
+        print("Payload missing 'memberwise'! Cannot update ideal points, quitting.")
         sys.exit(1)
 
-    print "(000) Running DW-NOMINATE on %i cores..." % cores
+    print("(000) Running DW-NOMINATE on %i cores..." % cores)
     firststarttime = time.time()
 
     if 'votes' in payload:
         nchoices = sum([len([xx for xx in x['votes'] if xx != 0])
                         for x in payload['votes']])
-        print "(000) %i total vote choices observed..." % nchoices
+        print("(000) %i total vote choices observed..." % nchoices)
 
     # Run dwnominate...
     pool = Pool(cores)
@@ -271,15 +271,15 @@ def update_nominate(payload, maxiter=20, cores=int(cpu_count() - 1), update=['bp
                                                    for xx in payload['votes'][i]['votes']]))}
                    for i in range(len(payload['votes'])) if payload['votes'][i]['update']]
             start = [payload['bp'][v['id']]
-                     for v in payload['votes'] if payload['votes'][i]['update']]
-            print "(%03i) Rollcall update data marshal took %2.2f seconds (%i votes)..." % (iter + 1, time.time() - starttime, len(start))
+                     for v in payload['votes'] if v['update']] # Cambiado (ojo con este cambio)
+            print("(%03i) Rollcall update data marshal took %2.2f seconds (%i votes)..." % (iter + 1, time.time() - starttime, len(start)))
             res_bp = mymap(update_bp_star, zip(
                 dat, [w] * len(dat), [b] * len(dat), start))
             for i, v in enumerate(payload['votes']):
                 if v['update']:
                     payload['bp'][v['id']] = res_bp[i]['bp']
-            print "\t\t" + str(res_bp[0]['bp'])
-            print "(%03i) Rollcall update took %2.2f seconds (%i votes)..." % (iter + 1, time.time() - starttime, len(start))
+            print("\t\t" + str(res_bp[0]['bp']))
+            print("(%03i) Rollcall update took %2.2f seconds (%i votes)..." % (iter + 1, time.time() - starttime, len(start)))
 
         # Update member
         if 'idpt' in update or 'bw' in update:
@@ -290,7 +290,7 @@ def update_nominate(payload, maxiter=20, cores=int(cpu_count() - 1), update=['bp
                    for i in range(len(payload['memberwise'])) if payload['memberwise'][i]['update']]
             start = [payload['idpt'][v['icpsr']]
                      for v in payload['memberwise'] if v['update']]
-            print "(%03i) Member/BW update data marshal took %2.2f seconds (%i members)..." % (iter + 1, time.time() - starttime, len(start))
+            print("(%03i) Member/BW update data marshal took %2.2f seconds (%i members)..." % (iter + 1, time.time() - starttime, len(start)))
 
         if 'idpt' in update:
             res_idpt = mymap(update_idpt_star, zip(
@@ -298,23 +298,23 @@ def update_nominate(payload, maxiter=20, cores=int(cpu_count() - 1), update=['bp
             for i, v in enumerate(payload['memberwise']):
                 if v['update']:
                     payload['idpt'][v['icpsr']] = res_idpt[i]['x']
-            print "(%03i) Member update took %2.2f seconds (%i members)..." % (iter + 1, time.time() - starttime, len(start))
-            print "\t\t Ideal Point[0] = " + str(res_idpt[0]['x'])
+            print("(%03i) Member update took %2.2f seconds (%i members)..." % (iter + 1, time.time() - starttime, len(start)))
+            print("\t\t Ideal Point[0] = " + str(res_idpt[0]['x']))
 
         # Update b and w
         if 'bw' in update:
             starttime = time.time()
             start = [payload['idpt'][v['icpsr']]
                      for v in payload['memberwise']]
-            print "(%03i) Weight and Beta update data marshal took %2.2f seconds (%i members)..." % (iter + 1, time.time() - starttime, len(start))
+            print("(%03i) Weight and Beta update data marshal took %2.2f seconds (%i members)..." % (iter + 1, time.time() - starttime, len(start)))
             res_wb = update_wb(dat, start, w, b, pool)
             w, b = res_wb['w'], res_wb['b']
-            print "(%03i) Weight and Beta  update took %2.2f seconds..." % (iter + 1, time.time() - starttime)
-            print "\t\t w = %7.4f, b = %7.4f" % (w, b)
-            print "(%03i) Iteration Loglik: -%9.4f across %i choices (GMP=%6.4f)\n" % (iter + 1, res_wb['llend'], nchoices, np.exp(-res_wb['llend'] / nchoices))
+            print("(%03i) Weight and Beta  update took %2.2f seconds..." % (iter + 1, time.time() - starttime))
+            print("\t\t w = %7.4f, b = %7.4f" % (w, b))
+            print("(%03i) Iteration Loglik: -%9.4f across %i choices (GMP=%6.4f)\n" % (iter + 1, res_wb['llend'], nchoices, np.exp(-res_wb['llend'] / nchoices)))
         iter += 1
 
-    print "(XXX) Total update time elapsed %5.2f minutes." % ((time.time() - firststarttime) / 60)
+    print("(XXX) Total update time elapsed %5.2f minutes." % ((time.time() - firststarttime) / 60))
 
     ret = {'control': {'iterations': iter,
                        'time': round((time.time() - firststarttime) / 60, 3),
@@ -344,14 +344,13 @@ def update_nominate(payload, maxiter=20, cores=int(cpu_count() - 1), update=['bp
         ret['GMP'] = np.exp(-res_wb['llend'] / nchoices)
 
     if 'idpt' in update and 'members' in add_meta:
-        print "Adding member meta (GMP, number_of_votes, etc.)..."
+        print("Adding member meta (GMP, number_of_votes, etc.)...")
         ret = add_member_meta(payload, ret)
     if 'bp' in update and 'rollcalls' in add_meta:
-        print "Adding gmp to rollcalls..."
+        print("Adding gmp to rollcalls...")
         ret = add_rollcall_meta(payload, ret)
 
     return ret
-
 
 if __name__ == '__main__':
     print('Running pynominate')
